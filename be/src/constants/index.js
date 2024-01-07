@@ -1,0 +1,5 @@
+const ONE_WEEK = 7 * 24 * 60 * 60;
+const THRESHOLD_NO_GAS = 1800;
+const THRESHOLD_LEAK_HIGH = 5000;
+
+module.exports = { ONE_WEEK, THRESHOLD_NO_GAS, THRESHOLD_LEAK_HIGH };
