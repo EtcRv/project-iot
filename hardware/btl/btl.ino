@@ -14,6 +14,7 @@ const char *mqtt_username = "emqx";
 const char *mqtt_password = "public";
 const int mqtt_port = 1883;
 const int LED = 32;
+const int BUZZ = 33;
 const int SENSOR_INPUT = 34;
 String esp32_address;
 
@@ -44,15 +45,18 @@ void handleSensor(int sensor_value, bool isTest = false) {
   if(sensor_value < THRESHOLD_NO_GAS) {
       // Serial.println("No Gas");
       digitalWrite(LED, LOW);
+      digitalWrite(BUZZ, HIGH);
       publishMessage("Normal", sensor_value, false, isTest);
       delay(3000);
     } else if (sensor_value >= THRESHOLD_NO_GAS && sensor_value < THRESHOLD_LEAK_HIGH) {
       Serial.println("Gas detect");
       publishMessage("Gas detect", sensor_value, false, isTest);
-      for (int i = 0; i< 5; i++) {
+      for (int i = 0; i< 3; i++) {
         digitalWrite(LED, HIGH);
+        digitalWrite(BUZZ, LOW);
         delay(1500);
         digitalWrite(LED, LOW);
+        digitalWrite(BUZZ, HIGH);
         delay(1500);
       }
     } else if (sensor_value >= THRESHOLD_LEAK_HIGH) {
@@ -60,7 +64,9 @@ void handleSensor(int sensor_value, bool isTest = false) {
       publishMessage("Dangerous", sensor_value, false, isTest);
       for (int i = 0; i< 10; i++) {
         digitalWrite(LED, HIGH);
+        digitalWrite(BUZZ, LOW);
         delay(500);
+        digitalWrite(BUZZ, HIGH);
         digitalWrite(LED, LOW);
         delay(500);
       }
@@ -75,10 +81,12 @@ void handleReceiveMessage(String message) {
     Serial.println("Received message check leak!");
     Serial.println("Gas detect");
     publishMessage("Gas detect", THRESHOLD_NO_GAS, false, true);
-    for (int i = 0; i< 5; i++) {
+    for (int i = 0; i< 3; i++) {
       digitalWrite(LED, HIGH);
+      digitalWrite(BUZZ, HIGH);
       delay(1500);
       digitalWrite(LED, LOW);
+      digitalWrite(BUZZ, LOW);
       delay(1500);
     }
   } else if (message.equals("\"Check Leak High\"")) {
@@ -87,7 +95,9 @@ void handleReceiveMessage(String message) {
     publishMessage("Dangerous", THRESHOLD_LEAK_HIGH, false, true);
     for (int i = 0; i< 10; i++) {
       digitalWrite(LED, HIGH);
+      digitalWrite(BUZZ, HIGH);
       delay(500);
+      digitalWrite(BUZZ, LOW);
       digitalWrite(LED, LOW);
       delay(500);
     }
@@ -136,6 +146,7 @@ void setup() {
     Serial.println("Connected to the Wi-Fi network");
     esp32_address = WiFi.macAddress();
     pinMode(LED, OUTPUT);
+    pinMode(BUZZ, OUTPUT);
 
     // Set up MQTT callback and server
     client.setServer(mqtt_broker, mqtt_port);
@@ -152,7 +163,7 @@ void loop() {
     client.loop();
     int sensor_Aout = analogRead(SENSOR_INPUT);
     // Serial.print("Gas Sensor: ");
-    // Serial.println(sensor_Aout);
+    Serial.println(sensor_Aout);
     handleSensor(sensor_Aout);
     
 }
