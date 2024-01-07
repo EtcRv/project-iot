@@ -7,6 +7,7 @@ import { updateUser } from '../../redux/userSlice';
 import { COLOR } from '../../styles/color';
 import { Circle } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import Map from '../../components/Map';
 
 const Home = () => {
   const [userInfor, setUserInfor] = React.useState({});
@@ -38,7 +39,9 @@ const Home = () => {
   return (
     <Box>
       <Grid container spacing={1} marginTop={2} paddingX={4}>
-        <Grid item xs={8}></Grid>
+        <Grid item xs={8}>
+          <Map />
+        </Grid>
         <Grid item xs={4}>
           <Box
             display="flex"
