@@ -10,7 +10,7 @@ const defaultProps = {
     lat: LAT,
     lng: LNG,
   },
-  zoom: 20,
+  zoom: 18,
 };
 
 const Map = () => {

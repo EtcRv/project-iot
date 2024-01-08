@@ -1,18 +1,44 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
-
+#include <WiFiClientSecure.h>
 // WiFi
-const char *ssid = "kira"; // Enter your Wi-Fi name
-const char *password = "matkhauwifi";  // Enter Wi-Fi password
+const char *ssid = "iPhone"; // Enter your Wi-Fi name
+const char *password = "dungpi123";  // Enter Wi-Fi password
+
+const char* ca_cert= \
+"-----BEGIN CERTIFICATE-----\n" \
+"MIIDrzCCApegAwIBAgIQCDvgVpBCRrGhdWrJWZHHSjANBgkqhkiG9w0BAQUFADBh\n" \
+"MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3\n" \
+"d3cuZGlnaWNlcnQuY29tMSAwHgYDVQQDExdEaWdpQ2VydCBHbG9iYWwgUm9vdCBD\n" \
+"QTAeFw0wNjExMTAwMDAwMDBaFw0zMTExMTAwMDAwMDBaMGExCzAJBgNVBAYTAlVT\n" \
+"MRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5j\n" \
+"b20xIDAeBgNVBAMTF0RpZ2lDZXJ0IEdsb2JhbCBSb290IENBMIIBIjANBgkqhkiG\n" \
+"9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4jvhEXLeqKTTo1eqUKKPC3eQyaKl7hLOllsB\n" \
+"CSDMAZOnTjC3U/dDxGkAV53ijSLdhwZAAIEJzs4bg7/fzTtxRuLWZscFs3YnFo97\n" \
+"nh6Vfe63SKMI2tavegw5BmV/Sl0fvBf4q77uKNd0f3p4mVmFaG5cIzJLv07A6Fpt\n" \
+"43C/dxC//AH2hdmoRBBYMql1GNXRor5H4idq9Joz+EkIYIvUX7Q6hL+hqkpMfT7P\n" \
+"T19sdl6gSzeRntwi5m3OFBqOasv+zbMUZBfHWymeMr/y7vrTC0LUq7dBMtoM1O/4\n" \
+"gdW7jVg/tRvoSSiicNoxBN33shbyTApOB6jtSj1etX+jkMOvJwIDAQABo2MwYTAO\n" \
+"BgNVHQ8BAf8EBAMCAYYwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQUA95QNVbR\n" \
+"TLtm8KPiGxvDl7I90VUwHwYDVR0jBBgwFoAUA95QNVbRTLtm8KPiGxvDl7I90VUw\n" \
+"DQYJKoZIhvcNAQEFBQADggEBAMucN6pIExIK+t1EnE9SsPTfrgT1eXkIoyQY/Esr\n" \
+"hMAtudXH/vTBH1jLuG2cenTnmCmrEbXjcKChzUyImZOMkXDiqw8cvpOp/2PV5Adg\n" \
+"06O/nVsJ8dWO41P0jmP6P6fbtGbfYmbW0W5BjfIttep3Sp+dWOIrWcBAI+0tKIJF\n" \
+"PnlUkiaY4IBIqDfv8NZ5YBberOgOzW6sRBc4L0na4UU+Krk2U886UAb3LujEV0ls\n" \
+"YSEY1QSteDwsOoBrp+uvFRTp2InBuThs4pFsiv9kuXclVzDAGySj4dzp30d8tbQk\n" \
+"CAUw7C29C79Fv1C5qfPrmAESrciIxpg0X40KPMbp1ZWVbd4=" \
+"-----END CERTIFICATE-----\n";
 
 const int device_id = 1234123;
 
 // MQTT Broker
-const char *mqtt_broker = "broker.emqx.io";
+// const char *mqtt_broker = "broker.emqx.io";
+const char *mqtt_broker = "a171e37b.ala.us-east-1.emqxsl.com";
 const char *topic = "hust/iot/data";
 const char *mqtt_username = "emqx";
 const char *mqtt_password = "public";
-const int mqtt_port = 1883;
+// const int mqtt_port = 1883;
+const int mqtt_port = 8883;
 const int LED = 32;
 const int BUZZ = 33;
 const int SENSOR_INPUT = 34;
@@ -22,7 +48,8 @@ String esp32_address;
 const int THRESHOLD_NO_GAS = 1800;
 const int THRESHOLD_LEAK_HIGH = 5000;
 
-WiFiClient espClient;
+// WiFiClient espClient;
+WiFiClientSecure espClient;
 PubSubClient client(espClient);
 
 void publishMessage(char *message,int sensorValue = 0, bool isCheckDevice = false, bool isTest = false) {
@@ -105,7 +132,6 @@ void handleReceiveMessage(String message) {
 }
 
 void callback(char *topic, byte *payload, unsigned int length) {
-    Serial.println();
     String message = "";
     for (int i = 0; i < length; i++) {
         message += (char)payload[i];
@@ -149,11 +175,23 @@ void setup() {
     pinMode(BUZZ, OUTPUT);
 
     // Set up MQTT callback and server
+    espClient.setCACert(ca_cert);
     client.setServer(mqtt_broker, mqtt_port);
     client.setCallback(callback);
+    while (!client.connected()) {
+        if (client.connect("esp32-client-test", mqtt_username, mqtt_password)) {
+            Serial.println("Public emqx mqtt broker connected");
+        } else {
+            Serial.print("Failed to connect to MQTT broker, rc=");
+            Serial.print(client.state());
+            Serial.println("Retrying in 5 seconds.");
+            delay(5000);
+        }
+    }
 
     // Attempt to connect to MQTT
-    reconnect();
+    // reconnect();
+    // client.publish(topic, "Hi EMQX I'm ESP32 ^^"); // publish to the topic
 }
 
 void loop() {
